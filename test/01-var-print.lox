@@ -1,0 +1,8 @@
+print "one";
+print true;
+print 2 + 1;
+
+var a = "before";
+print a;
+var a = "after";
+print a;

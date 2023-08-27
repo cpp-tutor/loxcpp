@@ -1,0 +1,20 @@
+# NMAKE Makefile for loxcpp project
+# note: run from within Visual Studio 2019/2022 command prompt
+# "nmake /f Makefile.nmake"
+
+CPP = cl
+CPPFlags = /nologo /EHsc /std:c++20 /O2
+
+Target = loxcpp.exe
+Objs = main.obj Call.obj Expr.obj Stmt.obj Value.obj lexer\loxer.obj parser\loxgram.obj
+
+all: $(Target)
+
+.cpp.obj:
+  $(CPP) $(CPPFlags) /c /Fo$*.obj $*.cpp
+
+$(Target): $(Objs)
+  $(CPP) $(CPPFlags) /Fe$(Target) $(Objs)
+
+clean:
+  del $(Target) $(Objs)

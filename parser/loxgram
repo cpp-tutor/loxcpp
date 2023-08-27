@@ -1,0 +1,183 @@
+%class-name Loxgram
+%parsefun-source loxgram.cpp
+%scanner-token-function scanner.lex()
+%token-path Tokens.h
+%baseclass-preinclude Includes.h
+
+%stype std::shared_ptr<SType>
+%default-actions quiet
+
+%token LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE
+%token COMMA, DOT, SEMICOLON
+
+%token IDENTIFIER, STRING, NUMBER
+
+%token CLASS, ELSE, FALSE, FUN, FOR, IF, NIL
+%token PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE
+
+%right EQUAL
+%left OR
+%left AND
+%nonassoc BANG_EQUAL, EQUAL_EQUAL 
+%nonassoc GREATER, GREATER_EQUAL, LESS, LESS_EQUAL
+%left MINUS, PLUS
+%left SLASH, STAR
+%right BANG UMINUS
+
+%%
+
+program		: // empty
+			| program declaration { if (action_stmt) (*action_stmt)(std::dynamic_pointer_cast<Stmt>($2)); }
+			;
+
+declaration : classDecl
+        	| funDecl
+        	| varDecl
+            | statement
+			;
+
+classDecl	: CLASS identifier LEFT_BRACE optFunL RIGHT_BRACE					{ $$ = $4; std::dynamic_pointer_cast<StmtClass>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); }
+			| CLASS identifier LESS identifier LEFT_BRACE optFunL RIGHT_BRACE	{ $$ = $6; std::dynamic_pointer_cast<StmtClass>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); std::dynamic_pointer_cast<StmtClass>($$)->setSuper(std::make_shared<ExprVariable>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($4)->get()))); }
+			;
+
+optFunL		: /* empty */	{ $$ = std::make_shared<StmtClass>(); }
+			| funList
+			;
+
+funList		: funList function	{ $$ = $1; std::dynamic_pointer_cast<StmtClass>($$)->addMethod(std::dynamic_pointer_cast<StmtFunction>($1)); }
+			| function			{ $$ = std::make_shared<StmtClass>(); std::dynamic_pointer_cast<StmtClass>($$)->addMethod(std::dynamic_pointer_cast<StmtFunction>($1)); }
+			;
+
+function	: identifier LEFT_PAREN optParamL RIGHT_PAREN block	{ $$ = $3; std::dynamic_pointer_cast<StmtFunction>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($1)->get())); std::dynamic_pointer_cast<StmtFunction>($$)->setBody(std::dynamic_pointer_cast<StmtBlock>($5)); }
+			;
+
+funDecl		: FUN function	{ $$ = $2; }
+			;
+
+optParamL	: /* empty */	{ $$ = std::make_shared<StmtFunction>(); }
+			| paramList
+			;
+
+paramList	: paramList COMMA identifier	{ $$ = $1; std::dynamic_pointer_cast<StmtFunction>($$)->addParam(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get())); }
+			| identifier					{ $$ = std::make_shared<StmtFunction>(); std::dynamic_pointer_cast<StmtFunction>($$)->addParam(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($1)->get())); }
+			;
+
+varDecl		: VAR identifier EQUAL expression SEMICOLON { $$ = std::make_shared<StmtVariable>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get()), std::dynamic_pointer_cast<Expr>($4)); }
+			| VAR identifier SEMICOLON					{ $$ = std::make_shared<StmtVariable>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get()), std::make_shared<ExprLiteral>(std::monostate{})); }
+			;
+
+statement   : exprStmt
+            | forStmt
+            | ifStmt
+            | printStmt
+            | returnStmt 
+        	| whileStmt
+            | block
+			;
+
+block		: LEFT_BRACE blockStmts RIGHT_BRACE { $$ = $2; }
+			;
+
+blockStmts	: blockStmts declaration	{ $$ = $1; std::dynamic_pointer_cast<StmtBlock>($$)->append(std::dynamic_pointer_cast<Stmt>($2)); }
+			| declaration				{ $$ = std::make_shared<StmtBlock>(); std::dynamic_pointer_cast<StmtBlock>($$)->append(std::dynamic_pointer_cast<Stmt>($1)); }
+			;
+
+exprStmt	: expression SEMICOLON  { $$ = std::make_shared<StmtExpression>(std::dynamic_pointer_cast<Expr>($1)); }
+			;
+
+printStmt	: PRINT expression SEMICOLON 	{ $$ = std::make_shared<StmtPrint>(std::dynamic_pointer_cast<Expr>($2)); }
+			;
+
+returnStmt	: RETURN optExpr SEMICOLON		{ $$ = std::make_shared<StmtReturn>($2 ? std::dynamic_pointer_cast<Expr>($2) : std::make_shared<ExprLiteral>(std::monostate{})); }
+			;
+
+ifStmt		: IF LEFT_PAREN expression RIGHT_PAREN statement				{ $$ = std::make_shared<StmtIf>(std::dynamic_pointer_cast<Expr>($3), std::dynamic_pointer_cast<Stmt>($5), nullptr); }
+			| IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement { $$ = std::make_shared<StmtIf>(std::dynamic_pointer_cast<Expr>($3), std::dynamic_pointer_cast<Stmt>($5), std::dynamic_pointer_cast<Stmt>($7)); }
+			;
+
+whileStmt	: WHILE LEFT_PAREN expression RIGHT_PAREN statement	{ $$ = std::make_shared<StmtWhile>(std::dynamic_pointer_cast<Expr>($3), std::dynamic_pointer_cast<Stmt>($5)); }
+			;
+
+forStmt		: FOR LEFT_PAREN forInit optExpr SEMICOLON optExpr RIGHT_PAREN statement {
+												auto outerBlock = std::make_shared<StmtBlock>(); outerBlock->append(std::dynamic_pointer_cast<Stmt>($3));
+												auto innerBlock = std::make_shared<StmtBlock>(); innerBlock->append(std::dynamic_pointer_cast<Stmt>($8));
+												if ($6) {
+													innerBlock->append(std::make_shared<StmtExpression>(std::dynamic_pointer_cast<Expr>($6)));
+												}
+												outerBlock->append(std::make_shared<StmtWhile>($4 ? std::dynamic_pointer_cast<Expr>($4) : std::make_shared<ExprLiteral>(true), innerBlock));
+												$$ = outerBlock;
+											}
+			;
+
+forInit		: SEMICOLON		{ $$ = nullptr; }
+			| varDecl
+			| exprStmt
+			;
+
+optExpr		: /* empty */	{ $$ = nullptr; }
+			| expression
+			;
+
+expression	: assignment
+			| unary
+			| binary
+			| logical
+			| primary
+			| call
+			;
+
+assignment	: identifier EQUAL expression 				{ $$ = std::make_shared<ExprAssign>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($1)->get()), std::dynamic_pointer_cast<Expr>($3)); }
+			| primary DOT identifier EQUAL expression	{ $$ = std::make_shared<ExprSet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get()), std::dynamic_pointer_cast<Expr>($5)); }
+			| call DOT identifier EQUAL expression		{ $$ = std::make_shared<ExprSet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get()), std::dynamic_pointer_cast<Expr>($5)); }
+			;
+
+unary		: BANG expression						{ $$ = std::make_shared<ExprUnary>(BANG, std::dynamic_pointer_cast<Expr>($2)); }
+			| MINUS expression %prec UMINUS			{ $$ = std::make_shared<ExprUnary>(MINUS, std::dynamic_pointer_cast<Expr>($2)); }
+			;
+
+binary		: expression EQUAL_EQUAL expression		{ $$ = std::make_shared<ExprBinary>(EQUAL_EQUAL, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression BANG_EQUAL expression		{ $$ = std::make_shared<ExprBinary>(BANG_EQUAL, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression LESS expression			{ $$ = std::make_shared<ExprBinary>(LESS, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression LESS_EQUAL expression		{ $$ = std::make_shared<ExprBinary>(LESS_EQUAL, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression GREATER expression			{ $$ = std::make_shared<ExprBinary>(GREATER, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression GREATER_EQUAL expression	{ $$ = std::make_shared<ExprBinary>(GREATER_EQUAL, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression PLUS expression			{ $$ = std::make_shared<ExprBinary>(PLUS, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression MINUS expression			{ $$ = std::make_shared<ExprBinary>(MINUS, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression STAR expression			{ $$ = std::make_shared<ExprBinary>(STAR, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression SLASH expression			{ $$ = std::make_shared<ExprBinary>(SLASH, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			;
+
+logical     : expression OR expression              { $$ = std::make_shared<ExprLogical>(OR, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| expression AND expression             { $$ = std::make_shared<ExprLogical>(AND, std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			;
+
+primary		: identifier 							{ $$ = std::make_shared<ExprVariable>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($1)->get())); }
+ 			| NUMBER 	 							{ $$ = std::make_shared<ExprLiteral>(std::stod(scanner.matched())); }
+			| STRING     							{ $$ = std::make_shared<ExprLiteral>(scanner.matched().substr(1, scanner.matched().size() - 2)); }
+			| TRUE		 							{ $$ = std::make_shared<ExprLiteral>(true); }
+			| FALSE		 							{ $$ = std::make_shared<ExprLiteral>(false); }
+			| NIL		 							{ $$ = std::make_shared<ExprLiteral>(std::monostate{}); }
+			| LEFT_PAREN expression RIGHT_PAREN		{ $$ = std::make_shared<ExprGrouping>(std::dynamic_pointer_cast<Expr>($2)); }
+			| THIS									{ $$ = std::make_shared<ExprThis>(); }
+			| SUPER	DOT identifier					{ $$ = std::make_shared<ExprSuper>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get())); }
+			;
+
+identifier	: IDENTIFIER	{ $$ = std::make_shared<ExprLiteral>(scanner.matched()); }
+			;
+
+call		: primary getList	{ $$ = $2; }
+			;
+
+optExprL	: /* empty */	{ $$ = std::make_shared<ExprCall>(); }
+			| exprList
+			;
+
+exprList	: exprList COMMA expression		{ $$ = $1; std::dynamic_pointer_cast<ExprCall>($$)->appendArg(std::dynamic_pointer_cast<Expr>($3)); }
+			| expression					{ $$ = std::make_shared<ExprCall>(); std::dynamic_pointer_cast<ExprCall>($$)->appendArg(std::dynamic_pointer_cast<Expr>($1)); }
+			;
+
+getList		: getList DOT identifier					{ $$ = std::make_shared<ExprGet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get())); }
+			| getList LEFT_PAREN optExprL RIGHT_PAREN	{ $$ = std::dynamic_pointer_cast<ExprCall>($3); std::dynamic_pointer_cast<ExprCall>($$)->setCallee(std::dynamic_pointer_cast<Expr>($1)); }
+			| DOT identifier							{ $$ = std::make_shared<ExprGet>(std::dynamic_pointer_cast<Expr>($0), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); }
+			| LEFT_PAREN optExprL RIGHT_PAREN			{ $$ = std::dynamic_pointer_cast<ExprCall>($2); std::dynamic_pointer_cast<ExprCall>($$)->setCallee(std::dynamic_pointer_cast<Expr>($0)); }
+			;

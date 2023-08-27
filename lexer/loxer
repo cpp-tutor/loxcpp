@@ -1,0 +1,51 @@
+%class-name Loxer
+%lex-source "loxer.cpp"
+
+number      [0-9]+(\.[0-9]+)?
+identifier  [A-Za-z_][A-Za-z0-9_]*
+string      \"([^\"]|\n)*\"
+comment     "//".*
+
+%%
+
+and             return Tokens::AND;
+class           return Tokens::CLASS;
+else            return Tokens::ELSE;
+false           return Tokens::FALSE;
+fun             return Tokens::FUN;
+for             return Tokens::FOR;
+if              return Tokens::IF;
+nil             return Tokens::NIL;
+or              return Tokens::OR;
+print           return Tokens::PRINT;
+return          return Tokens::RETURN;
+super           return Tokens::SUPER;
+this            return Tokens::THIS;
+true            return Tokens::TRUE;
+var             return Tokens::VAR;
+while           return Tokens::WHILE;
+{number}        return Tokens::NUMBER;
+{identifier}    return Tokens::IDENTIFIER;
+{string}        return Tokens::STRING;
+"("             return Tokens::LEFT_PAREN;
+")"             return Tokens::RIGHT_PAREN;
+"{"             return Tokens::LEFT_BRACE;
+"}"             return Tokens::RIGHT_BRACE;
+","             return Tokens::COMMA;
+"."             return Tokens::DOT;
+"-"             return Tokens::MINUS;
+"+"             return Tokens::PLUS;
+";"             return Tokens::SEMICOLON;
+"/"             return Tokens::SLASH;
+"*"             return Tokens::STAR;
+"!"             return Tokens::BANG;
+"!="            return Tokens::BANG_EQUAL;
+"="             return Tokens::EQUAL;
+"=="            return Tokens::EQUAL_EQUAL;
+">"             return Tokens::GREATER;
+">="            return Tokens::GREATER_EQUAL;
+"<"             return Tokens::LESS;
+"<="            return Tokens::LESS_EQUAL;
+{comment}       accept(matched().length());
+\n|\r|\t|" "    accept(1);
+.               return matched()[0];
