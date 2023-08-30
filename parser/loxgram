@@ -34,6 +34,7 @@ declaration : classDecl
         	| funDecl
         	| varDecl
             | statement
+			| error SEMICOLON
 			;
 
 classDecl	: CLASS identifier LEFT_BRACE optFunL RIGHT_BRACE					{ $$ = $4; std::dynamic_pointer_cast<StmtClass>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); }
@@ -44,7 +45,7 @@ optFunL		: /* empty */	{ $$ = std::make_shared<StmtClass>(); }
 			| funList
 			;
 
-funList		: funList function	{ $$ = $1; std::dynamic_pointer_cast<StmtClass>($$)->addMethod(std::dynamic_pointer_cast<StmtFunction>($1)); }
+funList		: funList function	{ $$ = $1; std::dynamic_pointer_cast<StmtClass>($$)->addMethod(std::dynamic_pointer_cast<StmtFunction>($2)); }
 			| function			{ $$ = std::make_shared<StmtClass>(); std::dynamic_pointer_cast<StmtClass>($$)->addMethod(std::dynamic_pointer_cast<StmtFunction>($1)); }
 			;
 
