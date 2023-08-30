@@ -161,7 +161,6 @@ public:
     }
 
     virtual Value operator()(const ExprSuper& e) const override {
-        // note: this code is badly broken and may require structural changes elsewhere
         auto iter = locals.find(&e);
         int distance = (iter != locals.end()) ? iter->second : -1;
         auto superclass = std::dynamic_pointer_cast<LoxClass>(
@@ -176,8 +175,7 @@ public:
     }
 
     virtual Value operator()(const ExprThis& e) const override {
-        //return lookupVariable("this", &e);
-        return environment->getAt(0, "this"); // note: this hack(?) deviates from the book
+        return lookupVariable("this", &e);
     }
 
     virtual Value operator()(const ExprUnary& e) const override {
@@ -197,7 +195,7 @@ public:
         return lookupVariable(e.get(), &e);
     }
 
-    virtual void operator()(const StmtBlock& s) const {
+    virtual void operator()(const StmtBlock& s) const override {
         environment = Environment::makeShared(environment);
         for (auto statement : s.get()) {
             statement->accept(*this);
@@ -205,7 +203,7 @@ public:
         environment = environment->ancestor(1);
     }
 
-    virtual void operator()(const StmtClass& s) const {
+    virtual void operator()(const StmtClass& s) const override {
         std::shared_ptr<LoxClass> superclass;
         if (s.getSuper()) {
             auto super = evaluate(s.getSuper());
@@ -232,15 +230,15 @@ public:
         environment->assign(s.getName(), klass);
     }
 
-    virtual void operator()(const StmtExpression& s) const {
+    virtual void operator()(const StmtExpression& s) const override {
         recent = s.get()->accept(*this);
     }
     
-    virtual void operator()(const StmtFunction& s) const {
+    virtual void operator()(const StmtFunction& s) const override {
         environment->define(s.getName(), std::make_shared<LoxFunction>(s, environment, false));
     }
 
-    virtual void operator()(const StmtIf& s) const {
+    virtual void operator()(const StmtIf& s) const override {
         bool condition = isTruthy(s.getCond()->accept(*this));
         if (condition) {
             s.getThen()->accept(*this);
@@ -250,19 +248,19 @@ public:
         }
     }
 
-    virtual void operator()(const StmtPrint& s) const {
+    virtual void operator()(const StmtPrint& s) const override {
         out << toString(s.get()->accept(*this)) << '\n';
     }
 
-    virtual void operator()(const StmtReturn&s) const {
+    virtual void operator()(const StmtReturn&s) const override {
         throw Return(s.get()->accept(*this));
     }
 
-    virtual void operator()(const StmtVariable& s) const {
+    virtual void operator()(const StmtVariable& s) const override {
         environment->define(s.getName(), recent = s.getInit()->accept(*this));
     }
 
-    virtual void operator()(const StmtWhile& s) const {
+    virtual void operator()(const StmtWhile& s) const override {
         while (isTruthy(s.getCond()->accept(*this))) {
             s.getBody()->accept(*this);
         }

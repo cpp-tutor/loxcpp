@@ -16,7 +16,8 @@ class Resolver : public ExprVisitor, public StmtVisitor {
     };
     enum class ClassType {
         NONE,
-        CLASS
+        CLASS,
+        SUBCLASS
     };
     mutable FunctionType currentFunction = FunctionType::NONE;
     mutable ClassType currentClass = ClassType::NONE;
@@ -70,6 +71,12 @@ public:
     }
 
     virtual Value operator()(const ExprSuper& e) const override {
+        if (currentClass == ClassType::NONE) {
+            throw Error("Can't use 'super' outside of a class.");
+        }
+        else if (currentClass != ClassType::SUBCLASS) {
+            throw Error("Can't use 'super' in a class with no superclass.");
+        }
         resolveLocal(&e, "super");
         return std::monostate{};
     }
@@ -98,13 +105,13 @@ public:
         return std::monostate{};
     }
 
-    virtual void operator()(const StmtBlock& s) const {
+    virtual void operator()(const StmtBlock& s) const override {
         beginScope();
         resolve(s.get());
         endScope();
     }
 
-    virtual void operator()(const StmtClass& s) const {
+    virtual void operator()(const StmtClass& s) const override {
         ClassType enclosingClass = currentClass;
         currentClass = ClassType::CLASS;
         declare(s.getName());
@@ -113,6 +120,7 @@ public:
             if (s.getSuper()->get() == s.getName()) {
                 throw Error("A class can't inherit from itself.");
             }
+            currentClass = ClassType::SUBCLASS;
             resolve(s.getSuper());
             beginScope();
             scopes.back().insert({ "super", true });
@@ -130,17 +138,17 @@ public:
         currentClass = enclosingClass;
     }
 
-    virtual void operator()(const StmtExpression& s) const {
+    virtual void operator()(const StmtExpression& s) const override {
         resolve(s.get());
     }
     
-    virtual void operator()(const StmtFunction& s) const {
+    virtual void operator()(const StmtFunction& s) const override {
         declare(s.getName());
         define(s.getName());
         resolveFunction(s, FunctionType::FUNCTION);
     }
 
-    virtual void operator()(const StmtIf& s) const {
+    virtual void operator()(const StmtIf& s) const override {
         resolve(s.getCond());
         resolve(s.getThen());
         if (s.getElse()) {
@@ -148,11 +156,11 @@ public:
         }
     }
 
-    virtual void operator()(const StmtPrint& s) const {
+    virtual void operator()(const StmtPrint& s) const override {
         resolve(s.get());
     }
 
-    virtual void operator()(const StmtReturn&s) const {
+    virtual void operator()(const StmtReturn&s) const override {
         if (currentFunction == FunctionType::NONE) {
             throw Error("Can't return from top-level code.");
         }
@@ -165,7 +173,7 @@ public:
         }
     }
 
-    virtual void operator()(const StmtVariable& s) const {
+    virtual void operator()(const StmtVariable& s) const override {
         declare(s.getName());
         if (s.getInit()) {
             resolve(s.getInit());
@@ -173,7 +181,7 @@ public:
         define(s.getName());
     }
 
-    virtual void operator()(const StmtWhile& s) const {
+    virtual void operator()(const StmtWhile& s) const override {
         resolve(s.getCond());
         resolve(s.getBody());
     }
