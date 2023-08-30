@@ -4,12 +4,14 @@ A Lox interpreter from Part II of the book "Crafting Interpreters" by Bob Nystro
 
 ## Usage
 
-Under Windows run: `loxcpp [-i|-b] [a] [filename]`, under Linux run `./loxcpp [-i|-b] [a] [filename]`. The flags are:
+Under Windows run: `loxcpp [/?|/h|/v] [/i [/a]|/b] [filename]`, under Linux run `./loxcpp [-?|-h|-v] [-i [-a]|-b] [filename]`. The flags are:
 
-* `-i` run an interactive interpreter, executing each statement when entered
-* `-b` run in batch mode, use Ctrl-Z (Windows) or Ctrl-D (Linux) to end input
-* `-a` print the AST for expressions entered in interactive mode
+* `/b`, `-b` run in batch mode (this is the default), use Ctrl-Z (Windows) or Ctrl-D (Linux) to end input
+* `/i`, `-i` run an interactive interpreter, executing each statement when entered
+* `/a`, `-a` print the AST for expressions entered in interactive mode
 * `[filename]` read from file instead of standard input
+* `/v`, `-v` print version string and exit
+* `/?`, `/h`, `-?`, `-h` print usage info and exit
 
 Error handling and reporting is very basic, the parser only outputs "syntax error" and the interpreter can throw exceptions.
 
@@ -54,8 +56,10 @@ Heavy use of `std::make_shared` and `std::dynamic_pointer_cast` is made, particu
 
 ## Future work and status
 
-Don't be fooled by the 1.00+ version number&mdash;this is alpha-development quality software, in particular `this` and `super` do not work and fixing these is a priority. The project does contain a large chunk of working code which may be of interest to others wanting to use `flexc++` and `bisonc++` to create an interpreter, or who have worked through the book and want to gain greater knowledge of Modern C++. It is assumed that a lot of the existing code and be reused/adapted to create a JIT version in the style of `clox`.
+Don't be fooled by the 1.00+ version number&mdash;this is alpha-development quality software. The project does contain a large chunk of working code which may be of interest to others wanting to use `flexc++` and `bisonc++` to create an interpreter, or who have worked through the book and want to gain greater knowledge of Modern C++. It is assumed that much of the existing code can be reused/adapted to create a JIT version, in the style of `clox`, as a future improvement.
 
 ## Releases
 
 * *2023/08/27*: **1.00** First upload to GitHub with Windows executable. Many bugs, features and defects: please raise issues and submit pull requests.
+
+* *2023/08/30*: **1.01** Second upload to GitHub with Windows executable. Believed to be complete and correct coverage of all of the material in Part II.

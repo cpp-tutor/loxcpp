@@ -14,7 +14,7 @@ class Loxgram: public LoxgramBase
     Loxer& scanner;
     std::function<void(std::shared_ptr<Stmt>)> *action_stmt;
     public:
-        Loxgram() = default;
+        Loxgram() = delete;
         Loxgram(Loxer& scanner, decltype(action_stmt) action_stmt = nullptr)
             : scanner{ scanner }, action_stmt{ action_stmt } {}
         int parse();
