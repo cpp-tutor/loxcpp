@@ -9,7 +9,7 @@ Value LoxFunction::call(Interpreter& interpreter, const std::vector<std::shared_
     for (size_t i = 0; i != arguments.size(); ++i) {
         closure->define(params.at(i), arguments.at(i)->accept(interpreter));
     }
-    auto environment = Environment::makeShared(interpreter.environment, closure);
+    auto environment = Environment::makeShared(/* interpreter.environment, */ closure);
     std::swap(environment, interpreter.environment);
     try {
         body->accept(interpreter);
@@ -18,7 +18,7 @@ Value LoxFunction::call(Interpreter& interpreter, const std::vector<std::shared_
     }
     catch (const Return& r) {
         std::swap(environment, interpreter.environment);
-        return isInitializer ? closure->getAt(0, "this") :  r.get();
+        return isInitializer ? closure->getAt(0, "this") : r.get();
     }
 }
 
