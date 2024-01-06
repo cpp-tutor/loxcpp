@@ -17,11 +17,12 @@ class Interpreter : public ExprVisitor, public StmtVisitor {
     std::ostream& out;
     mutable Value recent;
     mutable std::unordered_map<const Expr*,int> locals;
-    friend Value LoxFunction::call(Interpreter&, const std::vector<std::shared_ptr<Expr>>&);
+    friend Value LoxFunction::call(const Interpreter&, const std::vector<std::shared_ptr<Expr>>&);
 public:
     Interpreter(std::shared_ptr<Environment> environment, std::ostream& out = std::cout)
         : globals{ environment }, environment{ environment }, out{ out } {}
-
+    Interpreter(const Interpreter&) = default;
+    
     const Value& lastValue() const { return recent; }
 
     virtual Value operator()(const ExprAssign& e) const override {

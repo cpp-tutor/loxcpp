@@ -9,7 +9,7 @@
 #include <functional>
 #include <fstream>
 
-#define VER_STR "1.01 (2023-Aug-30)"
+#define VER_STR "1.02 (2024-Jan-06)"
 
 #ifdef _MSC_VER
 #define OPTION_SWITCH '/'

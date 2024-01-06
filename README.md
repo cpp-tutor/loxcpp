@@ -26,7 +26,7 @@ nmake /f Makefile.nmake
 The GNU Makefile can be run wih
 
 ```
-make [flexcpp] [bisoncpp] [all]
+make [all] [flexcpp] [bisoncpp] [all]
 ```
 
 For the `flexcpp` and `bisoncpp` targets to work, the `flexc++` and `bisonc++` programs must be installed (these are Linux only and a port to Windows is unlikely). I recommend building from scratch using the source from GitLab:
@@ -63,3 +63,5 @@ Don't be fooled by the 1.00+ version number&mdash;this is alpha-development qual
 * *2023/08/27*: **1.00** First upload to GitHub with Windows executable. Many bugs, features and defects: please raise issues and submit pull requests.
 
 * *2023/08/30*: **1.01** Second upload to GitHub with Windows executable. Believed to be complete and correct coverage of all of the material in Part II.
+
+* *2024/06/01*: **1.02** Third upload to GitHub with Windows executable. Fix to `LoxFunction::call()` to handle recursive functions correctly.

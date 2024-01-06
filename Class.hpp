@@ -24,7 +24,7 @@ public:
     LoxClass(const std::string& name, std::shared_ptr<LoxClass> superclass,
         std::unordered_map<std::string,std::shared_ptr<LoxFunction>>&& methods)
         : superclass{ superclass }, name{ name }, methods{ methods } {}
-    virtual Value call(Interpreter&, const std::vector<std::shared_ptr<Expr>>&) override;
+    virtual Value call(const Interpreter&, const std::vector<std::shared_ptr<Expr>>&) override;
     virtual const size_t arity() const override;
     virtual const std::string toString() const override { return "<class " + name + '>'; }
     Value findMethod(const std::string&) const;
@@ -68,7 +68,7 @@ inline Value LoxClass::findMethod(const std::string& name) const {
     }
 }
 
-inline Value LoxClass::call(Interpreter& interpreter, const std::vector<std::shared_ptr<Expr>>& arguments) {
+inline Value LoxClass::call(const Interpreter& interpreter, const std::vector<std::shared_ptr<Expr>>& arguments) {
     auto instance = std::make_shared<LoxInstance>(shared_from_this());
     auto initializer = findMethod("init");
     if (static_cast<ValueType>(initializer.index()) == ValueType::Callable) {
