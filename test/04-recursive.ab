@@ -1,0 +1,23 @@
+fn factorial(n)
+  if n = 0 then
+    return 1
+  else
+    return n * factorial(n -  1)
+  endif
+endfn
+
+for 0 <= n < 15
+  print factorial(n)
+next
+
+fn fibonacci(n)
+  if n < 2 then
+    return n
+  else
+    return fibonacci(n - 2) + fibonacci(n - 1)
+  endif
+endfn
+
+for 0 < n < 20
+  print fibonacci(n)
+next

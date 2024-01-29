@@ -7,7 +7,7 @@
 
 class Environment : public std::enable_shared_from_this<Environment> {
     std::shared_ptr<Environment> enclosing;
-    std::unordered_map<std::string,Value> values;
+    std::unordered_map<std::string,std::pair<Value,bool>> values;
     // note: constuctor is private as always accessed through std::shared_ptr<Environment>
     Environment() = default;
 public:
@@ -21,18 +21,19 @@ public:
         return e;
     }
 
-    void define(const std::string& name, Value value) {
+    void define(const std::string& name, Value value, bool isConstant = false) {
         if (auto iter = values.find(name); iter != values.end()) {
-            iter->second = value;
+            throw Error("Variable \'" + name + "\' is already defined.");
+            //iter->second = { value, isConstant };
         }
         else {
-            values.insert({name, value});
+            values.insert({ name, { value, isConstant } });
         }
     }
 
     Value get(const std::string& name) {
         if (auto iter = values.find(name); iter != values.end()) {
-            return iter->second;
+            return iter->second.first;
         }
         if (enclosing) {
             return enclosing->get(name);
@@ -42,7 +43,12 @@ public:
 
     void assign(const std::string& name, const Value& value) {
         if (auto iter = values.find(name); iter != values.end()) {
-            iter->second = value;
+            if (iter->second.second) {
+                throw Error("Cannot reassign to constant \'" + name + "\'.");
+            }
+            else {
+                iter->second.first = value;
+            }
             return;
         }
         if (enclosing) {

@@ -38,6 +38,10 @@ Value ExprSuper::accept(const ExprVisitor& v) const {
     return v(*this);
 }
 
+Value ExprTernary::accept(const ExprVisitor& v) const {
+    return v(*this);
+}
+
 Value ExprThis::accept(const ExprVisitor& v) const {
     return v(*this);
 }

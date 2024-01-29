@@ -5,8 +5,8 @@
 CPP = cl
 CPPFlags = /nologo /EHsc /std:c++20 /O2
 
-Target = loxcpp.exe
-Objs = main.obj Call.obj Expr.obj Stmt.obj Value.obj lexer\loxer.obj parser\loxgram.obj
+Target = abaci0.exe
+Objs = main.obj Call.obj Expr.obj Stmt.obj Value.obj lexer\lex.obj parser\parse.obj
 
 all: $(Target)
 

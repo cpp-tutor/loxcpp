@@ -5,17 +5,19 @@
 #include "Class.hpp"
 #include <utility>
 
-Value LoxFunction::call(const Interpreter& parent, const std::vector<std::shared_ptr<Expr>>& arguments) {
-    Interpreter interpreter{ parent };
-    interpreter.environment = Environment::makeShared(closure);
+Value LoxFunction::call(const Interpreter& interpreter, const std::vector<std::shared_ptr<Expr>>& arguments) {
+    auto environment = Environment::makeShared(closure);
     for (size_t i = 0; i != arguments.size(); ++i) {
-        interpreter.environment->define(params.at(i), arguments.at(i)->accept(parent));
+        environment->define(params.at(i), arguments.at(i)->accept(interpreter));
     }
+    std::swap(environment, interpreter.environment);
     try {
         body->accept(interpreter);
+        std::swap(environment, interpreter.environment);
         return isInitializer ? closure->getAt(0, "this") : std::monostate{};
     }
     catch (const Return& r) {
+        std::swap(environment, interpreter.environment);
         return isInitializer ? closure->getAt(0, "this") : r.get();
     }
 }

@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 static const std::unordered_map<int,std::string_view> ops{
-    { Tokens::BANG_EQUAL,       "NE" },
+    { Tokens::NOT_EQUAL,        "NE" },
     { Tokens::EQUAL_EQUAL,      "EQ" },
     { Tokens::GREATER,          "GT" },
     { Tokens::GREATER_EQUAL,    "GE" },
@@ -17,7 +17,7 @@ static const std::unordered_map<int,std::string_view> ops{
     { Tokens::PLUS,             "+"  },
     { Tokens::SLASH,            "/"  },
     { Tokens::STAR,             "*"  },
-    { Tokens::BANG,             "!"  },
+    { Tokens::NOT,              "!"  },
     { Tokens::OR,               "||" },
     { Tokens::AND,              "&&" },
 };
@@ -60,7 +60,11 @@ public:
     }
 
     virtual Value operator()(const ExprGet& e) const override {
-        return "(get)";
+        std::string str;
+        str.append("(get ");
+        str.append(e.getName());
+        str.append(")");
+        return str;
     }
 
     virtual Value operator()(const ExprGrouping& e) const override {
@@ -94,6 +98,21 @@ public:
         std::string str;
         str.append("(super ");
         str.append(e.get());
+        str.append(")");
+        return str;
+    }
+
+    virtual Value operator()(const ExprTernary& e) const override {
+        std::string str;
+        auto [ loIncl, hiIncl ] = e.getIncl();
+        str.append("(");
+        str.append(e.getName());
+        str.append(" in ");
+        str.append(loIncl ? "[" : "(");
+        str.append(toString(e.getLo()->accept(*this)));
+        str.append(",");
+        str.append(toString(e.getHi()->accept(*this)));
+        str.append(hiIncl ? "]" : ")");
         str.append(")");
         return str;
     }

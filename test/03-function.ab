@@ -1,0 +1,24 @@
+fn p()
+  print "hello"
+endfn
+p()
+
+fn add(a, b)
+  print a
+  print b
+  return a + b
+endfn
+print add(1, 2)
+
+let f(x) -> x + 1
+print f(42)
+
+let g <- f
+print g(42)
+
+let h(x) -> x - 1
+g <- h
+print g(42)
+
+f <- h
+print f(42)

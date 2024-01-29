@@ -1,6 +1,6 @@
 #include "FwdTypes.hpp"
-#include "lexer/Loxer.h"
-#include "parser/Loxgram.h"
+#include "lexer/Lex.h"
+#include "parser/Parse.h"
 #include "visitor/Interpreter.hpp"
 #include "visitor/Resolver.hpp"
 #include "visitor/ASTPrinter.hpp"
@@ -9,7 +9,7 @@
 #include <functional>
 #include <fstream>
 
-#define VER_STR "1.02 (2024-Jan-06)"
+#define VER_STR "0.01 (2024-Jan-01)"
 
 #ifdef _MSC_VER
 #define OPTION_SWITCH '/'
@@ -150,8 +150,8 @@ int main(const int argc, const char **argv) {
             }
         };
     }
-    Loxer scanner{ input.is_open() ? input : std::cin };
-    Loxgram parser{ scanner, &execute };
+    Lex scanner{ input.is_open() ? input : std::cin };
+    Parse parser{ scanner, &execute };
     if ((opts & RuntimeOptions::Batch) == RuntimeOptions::None) {
         while (returnCode != ReturnCode::Success) {
             try {

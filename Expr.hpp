@@ -110,6 +110,24 @@ public:
     virtual Value accept(const ExprVisitor&) const override;
 };
 
+class ExprTernary : public Expr {
+    std::string name;
+    std::shared_ptr<Expr> lo, hi;
+    bool loIncl, hiIncl;
+public:
+    ExprTernary(std::shared_ptr<Expr> lo,
+        bool loIncl,
+        const std::string& name,
+        bool hiIncl,
+        std::shared_ptr<Expr> hi)
+        : name{ name }, lo{ lo }, hi{ hi }, loIncl{ loIncl }, hiIncl{ hiIncl } {}
+    const auto& getName() const { return name; }
+    const auto getLo() const { return lo; }
+    const auto getHi() const { return hi; }
+    const std::pair<bool,bool> getIncl() const { return { loIncl, hiIncl }; }
+    virtual Value accept(const ExprVisitor&) const override;
+};
+
 class ExprThis : public Expr {
 public:
     ExprThis() = default;

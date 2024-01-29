@@ -15,6 +15,7 @@ public:
     virtual Value operator()(const ExprLogical&) const = 0;
     virtual Value operator()(const ExprSet&) const = 0;
     virtual Value operator()(const ExprSuper&) const = 0;
+    virtual Value operator()(const ExprTernary&) const = 0;
     virtual Value operator()(const ExprThis&) const = 0;
     virtual Value operator()(const ExprUnary&) const = 0;
     virtual Value operator()(const ExprVariable&) const = 0;

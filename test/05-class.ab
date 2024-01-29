@@ -1,0 +1,27 @@
+class base
+  fn init(a, b)
+    this.x <- a
+    this.y <- b
+  endfn
+
+  fn call()
+    print this.x
+    print this.y
+  endfn
+endclass
+
+let b = base(5, 9)
+b.call()
+
+class derived < base
+  fn call()
+    print -this.x
+    print -this.y
+  endfn
+
+  let answer() -> 42
+endclass
+
+let d = derived(6, 8)
+d.call()
+d.answer()

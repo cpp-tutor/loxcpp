@@ -81,6 +81,13 @@ public:
         return std::monostate{};
     }
 
+    virtual Value operator()(const ExprTernary& e) const override {
+        resolve(e.getHi());
+        resolve(e.getLo());
+        resolveLocal(&e, e.getName());
+        return std::monostate{};
+    }
+
     virtual Value operator()(const ExprThis& e) const override {
         if (currentClass == ClassType::NONE) {
             throw Error("Can't use 'this' outside of a class.");

@@ -45,7 +45,7 @@ public:
         if (static_cast<ValueType>(eval1.index()) == ValueType::Number
             && static_cast<ValueType>(eval2.index()) == ValueType::Number) {
             switch (e.getOp()) {
-                case Tokens::BANG_EQUAL:
+                case Tokens::NOT_EQUAL:
                     return get<double>(eval1) != get<double>(eval2);
                 case Tokens::EQUAL_EQUAL:
                     return get<double>(eval1) == get<double>(eval2);
@@ -73,7 +73,7 @@ public:
         else if (static_cast<ValueType>(eval1.index()) == ValueType::String
             && static_cast<ValueType>(eval2.index()) == ValueType::String) {
             switch (e.getOp()) {
-                case Tokens::BANG_EQUAL:
+                case Tokens::NOT_EQUAL:
                     return get<std::string>(eval1) != get<std::string>(eval2);
                 case Tokens::EQUAL_EQUAL:
                     return get<std::string>(eval1) == get<std::string>(eval2);
@@ -92,7 +92,7 @@ public:
         else if (static_cast<ValueType>(eval1.index()) == ValueType::Boolean
             && static_cast<ValueType>(eval2.index()) == ValueType::Boolean) {
             switch (e.getOp()) {
-                case Tokens::BANG_EQUAL:
+                case Tokens::NOT_EQUAL:
                     return get<bool>(eval1) != get<bool>(eval2);
                 case Tokens::EQUAL_EQUAL:
                     return get<bool>(eval1) == get<bool>(eval2);
@@ -175,6 +175,16 @@ public:
             std::get<std::shared_ptr<LoxCallable>>(method))->bind(object);
     }
 
+    virtual Value operator()(const ExprTernary& e) const override {
+        auto [ loIncl, hiIncl ] = e.getIncl();
+        Value lo = evaluate(e.getLo());
+        Value hi = evaluate(e.getHi());
+        Value var = lookupVariable(e.getName(), &e);
+        bool aboveLo = loIncl ? var >= lo : var > lo;
+        bool belowHi = hiIncl ? var <= hi : var < hi; 
+        return aboveLo && belowHi;
+    }
+
     virtual Value operator()(const ExprThis& e) const override {
         return lookupVariable("this", &e);
     }
@@ -182,7 +192,7 @@ public:
     virtual Value operator()(const ExprUnary& e) const override {
         Value eval = evaluate(e.get());
         switch (e.getOp()) {
-            case Tokens::BANG:
+            case Tokens::NOT:
                 return !isTruthy(eval);
             case Tokens::MINUS:
                 if (static_cast<ValueType>(eval.index()) == ValueType::Number) {
@@ -258,7 +268,7 @@ public:
     }
 
     virtual void operator()(const StmtVariable& s) const override {
-        environment->define(s.getName(), recent = s.getInit()->accept(*this));
+        environment->define(s.getName(), recent = s.getInit()->accept(*this), s.getIsConstant());
     }
 
     virtual void operator()(const StmtWhile& s) const override {

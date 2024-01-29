@@ -106,12 +106,15 @@ public:
 class StmtVariable : public Stmt {
     std::string name;
     std::shared_ptr<Expr> initializer;
+    bool isConstant;
 public:
     StmtVariable(const std::string& name,
-        std::shared_ptr<Expr> initializer)
-        : name{ name }, initializer{ initializer } {}
+        std::shared_ptr<Expr> initializer,
+        bool isConstant = false)
+        : name{ name }, initializer{ initializer }, isConstant{ isConstant } {}
     const auto& getName() const { return name; }
     const auto getInit() const { return initializer; }
+    const auto getIsConstant() const { return isConstant; }
     void accept(const StmtVisitor&) const override;
 };
 
