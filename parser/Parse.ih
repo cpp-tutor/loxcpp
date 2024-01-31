@@ -8,7 +8,9 @@
 
 inline void Parse::error()
 {
-    std::cerr << "Syntax error\n";
+    if (report_syntax_error) {
+        std::cerr << "Syntax error at line " << scanner.lineNr() << '\n';
+    }
 }
 
 // $insert lex

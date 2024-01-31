@@ -1,0 +1,13 @@
+fn test(n)
+  case n of
+    when 1 print "One"
+    when 2 print "Two"
+    when 3 print "Three"
+    else print "Number not known"
+  endcase
+endfn
+
+test(1)
+test(2)
+test(3)
+test(0)

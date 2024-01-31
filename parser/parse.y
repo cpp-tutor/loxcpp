@@ -8,12 +8,13 @@
 %default-actions quiet
 
 %token LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, LEFT_BRACKET, RIGHT_BRACKET
-%token COMMA, DOT, SEMICOLON
+%token COMMA, DOT, NEWLINE
 
 %token IDENTIFIER, STRING, NUMBER
 
-%token CLASS, ENDCLASS, ELSE, FALSE, FN, ENDFN, FOR, NEXT, IF, THEN, ENDIF, NIL
+%token CLASS, ENDCLASS, ELSE, FALSE, FN, ENDFN, FOR, ENDFOR, IF, THEN, ENDIF, NIL
 %token PRINT, RETURN, SUPER, THIS, TRUE, LET, TO, WHILE, ENDWHILE, REPEAT, UNTIL
+%token CASE, ENDCASE, WHEN, OF
 
 %right EQUAL, ASSIGN
 %left OR
@@ -49,8 +50,8 @@ funList		: funList funDecl	{ $$ = $1; std::dynamic_pointer_cast<StmtClass>($$)->
 			| funDecl			{ $$ = std::make_shared<StmtClass>(); std::dynamic_pointer_cast<StmtClass>($$)->addMethod(std::dynamic_pointer_cast<StmtFunction>($1)); }
 			;
 
-funDecl		: FN identifier LEFT_PAREN optParamL RIGHT_PAREN block ENDFN	{ $$ = $4; std::dynamic_pointer_cast<StmtFunction>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); std::dynamic_pointer_cast<StmtFunction>($$)->setBody(std::dynamic_pointer_cast<StmtBlock>($6)); }
-			| LET identifier LEFT_PAREN optParamL RIGHT_PAREN TO expression	{ $$ = $4; std::dynamic_pointer_cast<StmtFunction>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); std::dynamic_pointer_cast<StmtFunction>($$)->setBody(std::make_shared<StmtBlock>(std::vector<std::shared_ptr<Stmt>>{ std::make_shared<StmtReturn>(std::dynamic_pointer_cast<Expr>($7)) })); }
+funDecl		: FN identifier LEFT_PAREN optParamL RIGHT_PAREN blockStmts ENDFN	{ $$ = $4; std::dynamic_pointer_cast<StmtFunction>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); std::dynamic_pointer_cast<StmtFunction>($$)->setBody(std::dynamic_pointer_cast<StmtBlock>($6)); }
+			| LET identifier LEFT_PAREN optParamL RIGHT_PAREN TO expression		{ $$ = $4; std::dynamic_pointer_cast<StmtFunction>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); std::dynamic_pointer_cast<StmtFunction>($$)->setBody(std::make_shared<StmtBlock>(std::vector<std::shared_ptr<Stmt>>{ std::make_shared<StmtReturn>(std::dynamic_pointer_cast<Expr>($7)) })); }
 			;
 
 optParamL	: /* empty */	{ $$ = std::make_shared<StmtFunction>(); }
@@ -71,6 +72,8 @@ statement   : exprStmt
             | printStmt
             | returnStmt 
         	| whileStmt
+			| caseStmt
+			| repeatStmt
 			;
 
 block		: /* empty */	{ $$ = std::make_shared<StmtBlock>(); }
@@ -90,23 +93,34 @@ printStmt	: PRINT expression 	{ $$ = std::make_shared<StmtPrint>(std::dynamic_po
 returnStmt	: RETURN optExpr 	{ $$ = std::make_shared<StmtReturn>($2 ? std::dynamic_pointer_cast<Expr>($2) : std::make_shared<ExprLiteral>(std::monostate{})); }
 			;
 
-ifStmt		: IF expression THEN block ENDIF			{ $$ = std::make_shared<StmtIf>(std::dynamic_pointer_cast<Expr>($2), std::dynamic_pointer_cast<Stmt>($4), nullptr); }
-			| IF expression THEN block ELSE block ENDIF	{ $$ = std::make_shared<StmtIf>(std::dynamic_pointer_cast<Expr>($2), std::dynamic_pointer_cast<Stmt>($4), std::dynamic_pointer_cast<Stmt>($6)); }
+ifStmt		: IF expression THEN blockStmts ENDIF					{ $$ = std::make_shared<StmtIf>(std::dynamic_pointer_cast<Expr>($2), std::dynamic_pointer_cast<Stmt>($4), nullptr); }
+			| IF expression THEN blockStmts ELSE blockStmts ENDIF	{ $$ = std::make_shared<StmtIf>(std::dynamic_pointer_cast<Expr>($2), std::dynamic_pointer_cast<Stmt>($4), std::dynamic_pointer_cast<Stmt>($6)); }
 			;
 
-whileStmt	: WHILE expression block ENDWHILE	{ $$ = std::make_shared<StmtWhile>(std::dynamic_pointer_cast<Expr>($2), std::dynamic_pointer_cast<Stmt>($3)); }
+whileStmt	: WHILE expression blockStmts ENDWHILE	{ $$ = std::make_shared<StmtWhile>(std::dynamic_pointer_cast<Expr>($2), std::dynamic_pointer_cast<Stmt>($3)); }
 			;
 
-forStmt		: FOR ternary block NEXT { // FIXME: reduce/reduce conflict here
-												auto expr = std::dynamic_pointer_cast<ExprTernary>($2);
-												auto [ loIncl, hiIncl ] = expr->getIncl();
-												auto outerBlock = std::make_shared<StmtBlock>();
-												outerBlock->append(std::make_shared<StmtVariable>(expr->getName(), loIncl ? expr->getLo() : std::make_shared<ExprBinary>(PLUS, expr->getLo(), std::make_shared<ExprLiteral>(1.0))));
-												auto innerBlock = std::make_shared<StmtBlock>(std::dynamic_pointer_cast<StmtBlock>($3)->get());
-												innerBlock->append(std::make_shared<StmtExpression>(std::make_shared<ExprAssign>(expr->getName(), std::make_shared<ExprBinary>(PLUS, std::make_shared<ExprVariable>(expr->getName()), std::make_shared<ExprLiteral>(1.0)))));
-												outerBlock->append(std::make_shared<StmtWhile>(std::make_shared<ExprBinary>(hiIncl ? LESS_EQUAL : LESS, std::make_shared<ExprVariable>(expr->getName()), expr->getHi()), innerBlock));
-												$$ = outerBlock;
-									}
+forStmt		: FOR ternary blockStmts ENDFOR {
+													auto expr = std::dynamic_pointer_cast<ExprTernary>($2);
+													auto [ loIncl, hiIncl ] = expr->getIncl();
+													auto outerBlock = std::make_shared<StmtBlock>();
+													outerBlock->append(std::make_shared<StmtVariable>(expr->getName(), loIncl ? expr->getLo() : std::make_shared<ExprBinary>(PLUS, expr->getLo(), std::make_shared<ExprLiteral>(1.0))));
+													auto innerBlock = std::make_shared<StmtBlock>(std::dynamic_pointer_cast<StmtBlock>($3)->get());
+													innerBlock->append(std::make_shared<StmtExpression>(std::make_shared<ExprAssign>(expr->getName(), std::make_shared<ExprBinary>(PLUS, std::make_shared<ExprVariable>(expr->getName()), std::make_shared<ExprLiteral>(1.0)))));
+													outerBlock->append(std::make_shared<StmtWhile>(std::make_shared<ExprBinary>(hiIncl ? LESS_EQUAL : LESS, std::make_shared<ExprVariable>(expr->getName()), expr->getHi()), innerBlock));
+													$$ = outerBlock;
+												}
+			;
+
+caseStmt	: CASE expression OF whenList ENDCASE 					{ $$ = $4; std::dynamic_pointer_cast<StmtCase>($$)->setCaseOf(std::dynamic_pointer_cast<Expr>($2)); }
+			| CASE expression OF whenList ELSE blockStmts ENDCASE	{ $$ = $4; std::dynamic_pointer_cast<StmtCase>($$)->setCaseOf(std::dynamic_pointer_cast<Expr>($2)); std::dynamic_pointer_cast<StmtCase>($$)->setElse(std::dynamic_pointer_cast<StmtBlock>($6)); }
+			;
+
+whenList	: whenList WHEN expression blockStmts	{ $$ = $1; std::dynamic_pointer_cast<StmtCase>($$)->addWhen(std::dynamic_pointer_cast<Expr>($3), std::dynamic_pointer_cast<StmtBlock>($4)); }
+			| WHEN expression blockStmts			{ $$ = std::make_shared<StmtCase>(); std::dynamic_pointer_cast<StmtCase>($$)->addWhen(std::dynamic_pointer_cast<Expr>($2), std::dynamic_pointer_cast<StmtBlock>($3)); }
+			;
+
+repeatStmt	: REPEAT blockStmts UNTIL expression	{ $$ = std::make_shared<StmtRepeat>(std::dynamic_pointer_cast<StmtBlock>($2), std::dynamic_pointer_cast<Expr>($4)); }
 			;
 
 expression	: assignment
@@ -183,4 +197,3 @@ getList		: getList DOT identifier					{ $$ = std::make_shared<ExprGet>(std::dyna
 optExpr		: /* empty */	{ $$ = nullptr; }
 			| expression
 			;
-

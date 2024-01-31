@@ -15,7 +15,7 @@ class Lex: public LexBase
         explicit Lex(std::istream &in = std::cin, std::ostream &out = std::cout, bool keepCwd = true);
 
         Lex(std::string const &infile, std::string const &outfile, bool keepCwd = true);
-        
+
         // $insert lexFunctionDecl
         int lex();
 

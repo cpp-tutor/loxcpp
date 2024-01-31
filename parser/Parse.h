@@ -15,10 +15,11 @@ class Parse: public ParseBase
         
     Lex& scanner;
     std::function<void(std::shared_ptr<Stmt>)> *action_stmt;
+    bool report_syntax_error;
     public:
         Parse() = delete;
-        Parse(Lex& scanner, decltype(action_stmt) action_stmt = nullptr)
-            : scanner{ scanner }, action_stmt{ action_stmt } {}
+        Parse(Lex& scanner, decltype(action_stmt) action_stmt = nullptr, bool report_syntax_error = true)
+            : scanner{ scanner }, action_stmt{ action_stmt }, report_syntax_error{ report_syntax_error } {}
         int parse();
 
     private:

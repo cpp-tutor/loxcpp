@@ -8,6 +8,7 @@
 #include <vector>
 #include <functional>
 #include <fstream>
+#include <sstream>
 
 #define VER_STR "0.01 (2024-Jan-01)"
 
@@ -150,20 +151,46 @@ int main(const int argc, const char **argv) {
             }
         };
     }
-    Lex scanner{ input.is_open() ? input : std::cin };
-    Parse parser{ scanner, &execute };
     if ((opts & RuntimeOptions::Batch) == RuntimeOptions::None) {
-        while (returnCode != ReturnCode::Success) {
-            try {
+        bool continuation = false;
+        std::string inputChunk{};
+        while (!std::cin.eof()) {
+            std::string prompt = continuation ? "? " : "> ";
+            std::string inputLine{};
+            std::cout << prompt;
+            std::getline(std::cin, inputLine);
+            if (continuation && inputLine.empty()) {
+                continuation = false;
+                returnCode = ReturnCode::Success;
+            }
+            else {
+                inputChunk = (continuation) ? inputChunk + '\n' + inputLine : inputLine;
+                std::istringstream in{ inputChunk };
+                Lex scanner{ in };
+                Parse parser{ scanner, nullptr, false }; 
                 returnCode = parser.parse() ? ReturnCode::ParseError : ReturnCode::Success;
             }
-            catch (std::exception &e) {
-                std::cerr << e.what() << '\n';
-                returnCode = ReturnCode::RuntimeError;
+            if (returnCode == ReturnCode::Success) {
+                std::istringstream in{ inputChunk };
+                Lex scanner{ in };
+                Parse parser{ scanner, &execute, true };
+                try {
+                    parser.parse();
+                }
+                catch (std::exception &e) {
+                    std::cerr << e.what() << " at line " << scanner.lineNr() << '\n';
+                    returnCode = ReturnCode::RuntimeError;
+                }
+                continuation = false;
+            }
+            else {
+                continuation = true;
             }
         }
     }
     else {
+        Lex scanner{ input.is_open() ? input : std::cin >> std::noskipws };
+        Parse parser{ scanner, &execute }; 
         try {
             returnCode = parser.parse() ? ReturnCode::ParseError : ReturnCode::Success;
             if (returnCode != ReturnCode::ParseError) {
@@ -174,7 +201,7 @@ int main(const int argc, const char **argv) {
             }
         }
         catch (std::exception &e) {
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << " at line " << scanner.lineNr() << '\n';
             returnCode = ReturnCode::RuntimeError;
         }
     }

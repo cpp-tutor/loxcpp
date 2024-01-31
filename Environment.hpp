@@ -23,7 +23,7 @@ public:
 
     void define(const std::string& name, Value value, bool isConstant = false) {
         if (auto iter = values.find(name); iter != values.end()) {
-            throw Error("Variable \'" + name + "\' is already defined.");
+            throw Error("Variable \'" + name + "\' is already defined");
             //iter->second = { value, isConstant };
         }
         else {
@@ -38,13 +38,13 @@ public:
         if (enclosing) {
             return enclosing->get(name);
         }
-        throw Error("Undefined variable \'" + name + "\'.");
+        throw Error("Undefined variable \'" + name + "\'");
     }
 
     void assign(const std::string& name, const Value& value) {
         if (auto iter = values.find(name); iter != values.end()) {
             if (iter->second.second) {
-                throw Error("Cannot reassign to constant \'" + name + "\'.");
+                throw Error("Cannot reassign to constant \'" + name + "\'");
             }
             else {
                 iter->second.first = value;
@@ -55,7 +55,7 @@ public:
             enclosing->assign(name, value);
             return;
         }
-        throw Error("Undefined variable \'" + name + "\'.");
+        throw Error("Undefined variable \'" + name + "\'");
     }
 
     std::shared_ptr<Environment> ancestor(unsigned distance) {

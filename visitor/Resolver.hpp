@@ -72,10 +72,10 @@ public:
 
     virtual Value operator()(const ExprSuper& e) const override {
         if (currentClass == ClassType::NONE) {
-            throw Error("Can't use 'super' outside of a class.");
+            throw Error("Can't use 'super' outside of a class");
         }
         else if (currentClass != ClassType::SUBCLASS) {
-            throw Error("Can't use 'super' in a class with no superclass.");
+            throw Error("Can't use 'super' in a class with no superclass");
         }
         resolveLocal(&e, "super");
         return std::monostate{};
@@ -90,7 +90,7 @@ public:
 
     virtual Value operator()(const ExprThis& e) const override {
         if (currentClass == ClassType::NONE) {
-            throw Error("Can't use 'this' outside of a class.");
+            throw Error("Can't use 'this' outside of a class");
         }
         resolveLocal(&e, "this");
         return std::monostate{};
@@ -105,7 +105,7 @@ public:
         if (!scopes.empty()) {
             if (auto iter = scopes.back().find(e.get());
                 iter != scopes.back().end() && iter->second == false) {
-                throw Error( "Can't read local variable in its own initializer.");
+                throw Error( "Can't read local variable in its own initializer");
             }
         }
         resolveLocal(&e, e.get());
@@ -118,6 +118,17 @@ public:
         endScope();
     }
 
+    virtual void operator()(const StmtCase& s) const override {
+        resolve(s.getCaseOf());
+        for (const auto& w : s.getWhen()) {
+            resolve(w.first);
+            resolve(w.second);
+        }
+        if (auto e = s.getElse()) {
+            resolve(e);
+        }
+    }
+
     virtual void operator()(const StmtClass& s) const override {
         ClassType enclosingClass = currentClass;
         currentClass = ClassType::CLASS;
@@ -125,7 +136,7 @@ public:
         define(s.getName());
         if (s.getSuper()) {
             if (s.getSuper()->get() == s.getName()) {
-                throw Error("A class can't inherit from itself.");
+                throw Error("A class can't inherit from itself");
             }
             currentClass = ClassType::SUBCLASS;
             resolve(s.getSuper());
@@ -167,14 +178,19 @@ public:
         resolve(s.get());
     }
 
+    virtual void operator()(const StmtRepeat& s) const override {
+        resolve(s.getBody());
+        resolve(s.getCond());
+    }
+
     virtual void operator()(const StmtReturn&s) const override {
         if (currentFunction == FunctionType::NONE) {
-            throw Error("Can't return from top-level code.");
+            throw Error("Can't return from top-level code");
         }
         auto nil = std::dynamic_pointer_cast<ExprLiteral>(s.get());
         if (!nil || static_cast<ValueType>(nil->get().index()) != ValueType::Nil) {
             if (currentFunction == FunctionType::INITIALIZER) {
-                throw Error("Can't return a value from an initializer.");
+                throw Error("Can't return a value from an initializer");
             }
             resolve(s.get());
         }
@@ -224,7 +240,7 @@ private:
             scopes.back().insert({ name, false });
         }
         else {
-            throw Error("Already a variable named " + name + " in this scope.");
+            throw Error("Already a variable named " + name + " in this scope");
         }
     }
 

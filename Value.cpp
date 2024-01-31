@@ -26,6 +26,9 @@ std::string toString(const Value& l) {
 }
 
 bool isTruthy(const Value& l) {
+    if (static_cast<ValueType>(l.index()) == ValueType::Number) {
+        return get<double>(l) != 0.0;
+    }
     if (static_cast<ValueType>(l.index()) == ValueType::Nil) {
         return false;
     }

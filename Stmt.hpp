@@ -26,6 +26,23 @@ public:
     void accept(const StmtVisitor&) const override;
 };
 
+class StmtCase : public Stmt {
+    std::shared_ptr<Expr> expr;
+    std::vector<std::pair<std::shared_ptr<Expr>,std::shared_ptr<StmtBlock>>> when;
+    std::shared_ptr<StmtBlock> elseBlock;
+public:
+    StmtCase() = default;
+    void addWhen(std::shared_ptr<Expr> expression, std::shared_ptr<StmtBlock> statements) {
+        when.push_back({ expression, statements });
+    }
+    void setCaseOf(std::shared_ptr<Expr> expression) { expr = expression; }
+    void setElse(std::shared_ptr<StmtBlock> statements) { elseBlock = statements; }
+    const auto& getCaseOf() const { return expr; }
+    const auto& getWhen() const { return when; }
+    const auto& getElse() const { return elseBlock; }
+    void accept(const StmtVisitor&) const override;
+};
+
 class StmtClass : public Stmt {
     std::string name;
     std::shared_ptr<ExprVariable> superclass;
@@ -92,6 +109,18 @@ class StmtPrint : public Stmt {
 public:
     StmtPrint(std::shared_ptr<Expr> expression) : expression{ expression } {}
     const auto get() const { return expression; }
+    void accept(const StmtVisitor&) const override;
+};
+
+class StmtRepeat : public Stmt {
+    std::shared_ptr<Stmt> body;
+    std::shared_ptr<Expr> condition;
+public:
+    StmtRepeat(std::shared_ptr<Stmt> body,
+        std::shared_ptr<Expr> condition)
+        : body{ body }, condition{ condition } {}
+    const auto getCond() const { return condition; }
+    const auto getBody() const { return body; }
     void accept(const StmtVisitor&) const override;
 };
 

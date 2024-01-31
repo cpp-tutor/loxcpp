@@ -63,7 +63,7 @@ public:
                     return get<double>(eval1) + get<double>(eval2);
                 case Tokens::SLASH:
                     if (get<double>(eval2) == 0.0) {
-                        throw Error("Divide by zero.");
+                        throw Error("Divide by zero");
                     }
                     return get<double>(eval1) / get<double>(eval2);
                 case Tokens::STAR:
@@ -99,21 +99,21 @@ public:
             }
         }
         else {
-            throw Error("Bad type(s) for binary operator.");
+            throw Error("Bad type(s) for binary operator");
         }
-        throw Error("Bad binary operator for type.");
+        throw Error("Bad binary operator for type");
     }
 
     virtual Value operator()(const ExprCall& e) const override {
         if (e.getArgs().size() >= 255) {
-            throw Error("Too many arguments.");
+            throw Error("Too many arguments");
         }
         Value callee = evaluate(e.getCallee());
         if (static_cast<ValueType>(callee.index()) != ValueType::Callable) {
-            throw Error("Only functions and classes are callable.");
+            throw Error("Only functions and classes are callable");
         }
         if (e.getArgs().size() != get<std::shared_ptr<LoxCallable>>(callee)->arity()) {
-            throw Error("Wrong number of arguments.");
+            throw Error("Wrong number of arguments");
         }
         return get<std::shared_ptr<LoxCallable>>(callee)->call(const_cast<Interpreter&>(*this), e.getArgs());
     }
@@ -124,7 +124,7 @@ public:
             return get<std::shared_ptr<LoxInstance>>(value)->get(e.getName());
         }
         else {
-            throw Error("Only instances have properties.");
+            throw Error("Only instances have properties");
         }
     }
 
@@ -154,7 +154,7 @@ public:
     virtual Value operator()(const ExprSet& e) const override {
         Value object = evaluate(e.getObject());
         if (static_cast<ValueType>(object.index()) != ValueType::Instance) {
-            throw Error("Only instances have fields.");
+            throw Error("Only instances have fields");
         }
         Value value = evaluate(e.getValue());
         get<std::shared_ptr<LoxInstance>>(object)->set(e.getName(), value);
@@ -169,7 +169,7 @@ public:
         auto object = get<std::shared_ptr<LoxInstance>>(environment->getAt(distance - 1, "this"));
         Value method = superclass->findMethod(e.get());
         if (static_cast<ValueType>(method.index()) == ValueType::Nil) {
-            throw Error("Undefined property '" + e.get() + "'.");
+            throw Error("Undefined property '" + e.get() + "'");
         }
         return std::dynamic_pointer_cast<LoxFunction>(
             std::get<std::shared_ptr<LoxCallable>>(method))->bind(object);
@@ -199,7 +199,7 @@ public:
                     return -get<double>(eval);
                 }
         }
-        throw Error("Bad type for unary operator.");
+        throw Error("Bad type for unary operator");
     }
 
     virtual Value operator()(const ExprVariable& e) const override {
@@ -214,6 +214,19 @@ public:
         environment = environment->ancestor(1);
     }
 
+    virtual void operator()(const StmtCase& s) const override {
+        auto expr = evaluate(s.getCaseOf());
+        for (const auto& w : s.getWhen()) {
+            if (expr == evaluate(w.first)) {
+                w.second->accept(*this);
+                return;
+            }
+        }
+        if (auto e = s.getElse()) {
+            e->accept(*this);
+        }
+    }
+
     virtual void operator()(const StmtClass& s) const override {
         std::shared_ptr<LoxClass> superclass;
         if (s.getSuper()) {
@@ -221,7 +234,7 @@ public:
             if (static_cast<ValueType>(super.index()) != ValueType::Callable
                 || !(superclass = std::dynamic_pointer_cast<LoxClass>(
                     get<std::shared_ptr<LoxCallable>>(super)))) {
-                throw Error("Superclass must be a class.");
+                throw Error("Superclass must be a class");
             }
         }
         environment->define(s.getName(), std::monostate{});
@@ -261,6 +274,12 @@ public:
 
     virtual void operator()(const StmtPrint& s) const override {
         out << toString(s.get()->accept(*this)) << '\n';
+    }
+
+    virtual void operator()(const StmtRepeat& s) const override {
+        do {
+            s.getBody()->accept(*this);
+        } while(!isTruthy(s.getCond()->accept(*this)));
     }
 
     virtual void operator()(const StmtReturn&s) const override {

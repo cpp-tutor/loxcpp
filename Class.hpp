@@ -40,7 +40,7 @@ inline Value LoxInstance::get(const std::string& name) {
             std::get<std::shared_ptr<LoxCallable>>(method))
             ->bind(shared_from_this());
     }
-    throw Error("Undefined property \'" + name + "\'.");
+    throw Error("Undefined property \'" + name + "\'");
 }
 
 inline void LoxInstance::set(const std::string& name, const Value& value) {

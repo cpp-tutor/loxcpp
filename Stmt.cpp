@@ -5,6 +5,10 @@ void StmtBlock::accept(const StmtVisitor& v) const {
     v(*this);
 }
 
+void StmtCase::accept(const StmtVisitor& v) const {
+    v(*this);
+}
+
 void StmtClass::accept(const StmtVisitor& v) const {
     v(*this);
 }
@@ -22,6 +26,10 @@ void StmtIf::accept(const StmtVisitor& v) const {
 }
 
 void StmtPrint::accept(const StmtVisitor& v) const {
+    v(*this);
+}
+
+void StmtRepeat::accept(const StmtVisitor& v) const {
     v(*this);
 }
 
