@@ -8,7 +8,7 @@
 %default-actions quiet
 
 %token LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, LEFT_BRACKET, RIGHT_BRACKET
-%token COMMA, DOT, NEWLINE
+%token COMMA, DOT
 
 %token IDENTIFIER, STRING, NUMBER
 
@@ -135,6 +135,7 @@ expression	: assignment
 assignment	: identifier ASSIGN expression 				{ $$ = std::make_shared<ExprAssign>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($1)->get()), std::dynamic_pointer_cast<Expr>($3)); }
 			| primary DOT identifier ASSIGN expression	{ $$ = std::make_shared<ExprSet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get()), std::dynamic_pointer_cast<Expr>($5)); }
 			| call DOT identifier ASSIGN expression		{ $$ = std::make_shared<ExprSet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get()), std::dynamic_pointer_cast<Expr>($5)); }
+			| primary LEFT_BRACKET expression RIGHT_BRACKET ASSIGN expression 	{ $$ = make_shared<ExprSetSubscript>(std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3), std::dynamic_pointer_cast<Expr>($6)); }
 			;
 
 unary		: NOT expression						{ $$ = std::make_shared<ExprUnary>(NOT, std::dynamic_pointer_cast<Expr>($2)); }
@@ -172,12 +173,16 @@ primary		: identifier 							{ $$ = std::make_shared<ExprVariable>(get<std::stri
 			| LEFT_PAREN expression RIGHT_PAREN		{ $$ = std::make_shared<ExprGrouping>(std::dynamic_pointer_cast<Expr>($2)); }
 			| THIS									{ $$ = std::make_shared<ExprThis>(); }
 			| SUPER	DOT identifier					{ $$ = std::make_shared<ExprSuper>(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get())); }
+			| array									{ $$ = std::make_shared<ExprArray>(std::dynamic_pointer_cast<ExprCall>($1)->getArgs()); }
 			;
 
 identifier	: IDENTIFIER	{ $$ = std::make_shared<ExprLiteral>(scanner.matched()); }
 			;
 
 call		: primary getList	{ $$ = $2; }
+			;
+
+array		: LEFT_BRACKET optExprL RIGHT_BRACKET	{ $$ = $2; }
 			;
 
 optExprL	: /* empty */	{ $$ = std::make_shared<ExprCall>(); }
@@ -188,10 +193,12 @@ exprList	: exprList COMMA expression		{ $$ = $1; std::dynamic_pointer_cast<ExprC
 			| expression					{ $$ = std::make_shared<ExprCall>(); std::dynamic_pointer_cast<ExprCall>($$)->appendArg(std::dynamic_pointer_cast<Expr>($1)); }
 			;
 
-getList		: getList DOT identifier					{ $$ = std::make_shared<ExprGet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get())); }
-			| getList LEFT_PAREN optExprL RIGHT_PAREN	{ $$ = std::dynamic_pointer_cast<ExprCall>($3); std::dynamic_pointer_cast<ExprCall>($$)->setCallee(std::dynamic_pointer_cast<Expr>($1)); }
-			| DOT identifier							{ $$ = std::make_shared<ExprGet>(std::dynamic_pointer_cast<Expr>($0), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); }
-			| LEFT_PAREN optExprL RIGHT_PAREN			{ $$ = std::dynamic_pointer_cast<ExprCall>($2); std::dynamic_pointer_cast<ExprCall>($$)->setCallee(std::dynamic_pointer_cast<Expr>($0)); }
+getList		: getList DOT identifier						{ $$ = std::make_shared<ExprGet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get())); }
+			| getList LEFT_PAREN optExprL RIGHT_PAREN		{ $$ = std::dynamic_pointer_cast<ExprCall>($3); std::dynamic_pointer_cast<ExprCall>($$)->setCallee(std::dynamic_pointer_cast<Expr>($1)); }
+			| getList LEFT_BRACKET expression RIGHT_BRACKET	{ $$ = std::make_shared<ExprSubscript>(std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3)); }
+			| DOT identifier								{ $$ = std::make_shared<ExprGet>(std::dynamic_pointer_cast<Expr>($0), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); }
+			| LEFT_PAREN optExprL RIGHT_PAREN				{ $$ = std::dynamic_pointer_cast<ExprCall>($2); std::dynamic_pointer_cast<ExprCall>($$)->setCallee(std::dynamic_pointer_cast<Expr>($0)); }
+			| LEFT_BRACKET expression RIGHT_BRACKET			{ $$ = std::make_shared<ExprSubscript>(std::dynamic_pointer_cast<Expr>($0), std::dynamic_pointer_cast<Expr>($2)); }
 			;
 
 optExpr		: /* empty */	{ $$ = nullptr; }

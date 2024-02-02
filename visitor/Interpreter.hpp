@@ -25,6 +25,14 @@ public:
     
     const Value& lastValue() const { return recent; }
 
+    virtual Value operator()(const ExprArray& e) const override {
+        Value value = std::make_shared<LoxArray>();
+        for (const auto& element : e.get()) {
+            get<std::shared_ptr<LoxArray>>(value)->append(evaluate(element));
+        }
+        return value;
+    }
+
     virtual Value operator()(const ExprAssign& e) const override {
         Value value = evaluate(e.getExpr());
         int distance = -1;
@@ -115,7 +123,7 @@ public:
         if (e.getArgs().size() != get<std::shared_ptr<LoxCallable>>(callee)->arity()) {
             throw Error("Wrong number of arguments");
         }
-        return get<std::shared_ptr<LoxCallable>>(callee)->call(const_cast<Interpreter&>(*this), e.getArgs());
+        return get<std::shared_ptr<LoxCallable>>(callee)->call(*this, e.getArgs());
     }
 
     virtual Value operator()(const ExprGet& e) const override {
@@ -159,6 +167,40 @@ public:
         Value value = evaluate(e.getValue());
         get<std::shared_ptr<LoxInstance>>(object)->set(e.getName(), value);
         return value;
+    }
+
+    virtual Value operator()(const ExprSetSubscript& e) const override {
+        Value value = evaluate(e.getExpr());
+        if (Value l = evaluate(e.getArray());
+            static_cast<ValueType>(l.index()) == ValueType::Array) {
+            if (Value idx = evaluate(e.getIndex());
+                static_cast<ValueType>(idx.index()) == ValueType::Number) {
+                (*get<std::shared_ptr<LoxArray>>(l))[get<double>(idx)] = value;
+            }
+            else {
+                throw Error("Array index is not a number");
+            }
+        }
+        else {
+            throw Error("Expression is not an array");
+        }
+        return value;
+    }
+
+    virtual Value operator()(const ExprSubscript& e) const override {
+        Value value = evaluate(e.getArray());
+        if (static_cast<ValueType>(value.index()) == ValueType::Array) {
+            Value idx = evaluate(e.getIndex());
+            if (static_cast<ValueType>(idx.index()) == ValueType::Number) {
+                return (*get<std::shared_ptr<LoxArray>>(value))[get<double>(idx)];
+            }
+            else {
+                throw Error("Array index is not a number");
+            }
+        }
+        else {
+            throw Error("Can only use subscript with an array");
+        }
     }
 
     virtual Value operator()(const ExprSuper& e) const override {
@@ -282,7 +324,7 @@ public:
         } while(!isTruthy(s.getCond()->accept(*this)));
     }
 
-    virtual void operator()(const StmtReturn&s) const override {
+    virtual void operator()(const StmtReturn& s) const override {
         throw Return(s.get()->accept(*this));
     }
 
@@ -307,7 +349,10 @@ public:
 
 private:
     Value evaluate(std::shared_ptr<Expr> e) const {
-        if (auto s = std::dynamic_pointer_cast<ExprAssign>(e)) {
+        if (auto s = std::dynamic_pointer_cast<ExprArray>(e)) {
+            return operator()(static_cast<ExprArray&>(*s));
+        }
+        else if (auto s = std::dynamic_pointer_cast<ExprAssign>(e)) {
             return operator()(static_cast<ExprAssign&>(*s));
         }
         else if (auto s = std::dynamic_pointer_cast<ExprBinary>(e)) {
@@ -331,8 +376,17 @@ private:
         else if (auto s = std::dynamic_pointer_cast<ExprSet>(e)) {
             return operator()(static_cast<ExprSet&>(*s));
         }
+        else if (auto s = std::dynamic_pointer_cast<ExprSetSubscript>(e)) {
+            return operator()(static_cast<ExprSetSubscript&>(*s));
+        }
+        else if (auto s = std::dynamic_pointer_cast<ExprSubscript>(e)) {
+            return operator()(static_cast<ExprSubscript&>(*s));
+        }
         else if (auto s = std::dynamic_pointer_cast<ExprSuper>(e)) {
             return operator()(static_cast<ExprSuper&>(*s));
+        }
+        else if (auto s = std::dynamic_pointer_cast<ExprTernary>(e)) {
+            return operator()(static_cast<ExprTernary&>(*s));
         }
         else if (auto s = std::dynamic_pointer_cast<ExprThis>(e)) {
             return operator()(static_cast<ExprThis&>(*s));

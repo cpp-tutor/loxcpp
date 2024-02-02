@@ -2,6 +2,10 @@
 #include "Expr.hpp"
 #include "visitor/ExprVisitor.hpp"
 
+Value ExprArray::accept(const ExprVisitor& v) const {
+    return v(*this);
+}
+
 Value ExprAssign::accept(const ExprVisitor& v) const {
     return v(*this);
 }
@@ -31,6 +35,14 @@ Value ExprLogical::accept(const ExprVisitor& v) const {
 }
 
 Value ExprSet::accept(const ExprVisitor& v) const {
+    return v(*this);
+}
+
+Value ExprSetSubscript::accept(const ExprVisitor& v) const {
+    return v(*this);
+}
+
+Value ExprSubscript::accept(const ExprVisitor& v) const {
     return v(*this);
 }
 

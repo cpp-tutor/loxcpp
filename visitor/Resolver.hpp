@@ -24,6 +24,13 @@ class Resolver : public ExprVisitor, public StmtVisitor {
 public:
     Resolver(Interpreter& interpreter) : interpreter{ interpreter } {}
 
+    virtual Value operator()(const ExprArray& e) const override {
+        for (const auto elem : e.get()) {
+            resolve(elem);
+        }
+        return std::monostate{};
+    }
+
     virtual Value operator()(const ExprAssign& e) const override {
         resolve(e.getExpr());
         resolveLocal(&e, e.getName());
@@ -67,6 +74,19 @@ public:
     virtual Value operator()(const ExprSet& e) const override {
         resolve(e.getValue());
         resolve(e.getObject());
+        return std::monostate{};
+    }
+
+    virtual Value operator()(const ExprSetSubscript& e) const override {
+        resolve(e.getExpr());
+        resolve(e.getArray());
+        resolve(e.getIndex());
+        return std::monostate{};
+    }
+
+    virtual Value operator()(const ExprSubscript& e) const override {
+        resolve(e.getArray());
+        resolve(e.getIndex());
         return std::monostate{};
     }
 

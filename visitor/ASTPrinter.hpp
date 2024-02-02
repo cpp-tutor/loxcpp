@@ -24,6 +24,10 @@ static const std::unordered_map<int,std::string_view> ops{
 
 class ASTPrinter : public ExprVisitor {
 public:
+    virtual Value operator()(const ExprArray& e) const override {
+        return "(array)";
+    }
+    
     virtual Value operator()(const ExprAssign& e) const override {
         std::string str;
         str.append("(assign ");
@@ -92,6 +96,14 @@ public:
 
     virtual Value operator()(const ExprSet& e) const override {
         return "(set)";
+    }
+
+    virtual Value operator()(const ExprSetSubscript& e) const override {
+        return "(set [])";
+    }
+
+    virtual Value operator()(const ExprSubscript& e) const override {
+        return "([])";
     }
 
     virtual Value operator()(const ExprSuper& e) const override {

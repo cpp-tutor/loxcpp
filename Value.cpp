@@ -3,6 +3,7 @@
 #include "Class.hpp"
 #include <sstream>
 #include <iomanip>
+#include <stdexcept>
 
 std::string toString(const Value& l) {
     switch (static_cast<ValueType>(l.index())) {
@@ -17,6 +18,21 @@ std::string toString(const Value& l) {
         }
         case ValueType::String:
             return get<std::string>(l);
+        case ValueType::Array: {
+            const auto& array = get<std::shared_ptr<LoxArray>>(l);
+            if (!array->size()) {
+                return "[]";
+            }
+            std::ostringstream oss;
+            oss << "[ ";
+            auto sep = "";
+            for (const auto& elem : array->get()) {
+                oss << sep << toString(elem);
+                sep = ", ";
+            }
+            oss << " ]";
+            return oss.str();
+        }
         case ValueType::Callable:
             return get<std::shared_ptr<LoxCallable>>(l)->toString();
         case ValueType::Instance:
@@ -26,10 +42,13 @@ std::string toString(const Value& l) {
 }
 
 bool isTruthy(const Value& l) {
-    if (static_cast<ValueType>(l.index()) == ValueType::Number) {
+    if (static_cast<ValueType>(l.index()) == ValueType::Array) {
+        return get<std::shared_ptr<LoxArray>>(l)->size() != 0;
+    }
+    else if (static_cast<ValueType>(l.index()) == ValueType::Number) {
         return get<double>(l) != 0.0;
     }
-    if (static_cast<ValueType>(l.index()) == ValueType::Nil) {
+    else if (static_cast<ValueType>(l.index()) == ValueType::Nil) {
         return false;
     }
     else if (static_cast<ValueType>(l.index()) == ValueType::Boolean) {
@@ -38,4 +57,20 @@ bool isTruthy(const Value& l) {
     else {
         return true;
     }
+}
+
+const Value& LoxArray::operator[](std::vector<Value>::size_type idx) const {
+    try {
+        return array.at(idx);
+    }
+    catch (std::out_of_range&) {
+        throw Error("Array access out of bounds with index " + std::to_string(idx) + " and size " + std::to_string(size()));
+    }
+}
+
+Value& LoxArray::operator[](std::vector<Value>::size_type idx) {
+    if (size() <= idx) {
+        array.resize(idx + 1);
+    }
+    return array.at(idx);
 }

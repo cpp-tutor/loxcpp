@@ -6,6 +6,7 @@
 
 class ExprVisitor {
 public:
+    virtual Value operator()(const ExprArray&) const = 0;
     virtual Value operator()(const ExprAssign&) const = 0;
     virtual Value operator()(const ExprBinary&) const = 0;
     virtual Value operator()(const ExprCall&) const = 0;
@@ -14,6 +15,8 @@ public:
     virtual Value operator()(const ExprLiteral&) const = 0;
     virtual Value operator()(const ExprLogical&) const = 0;
     virtual Value operator()(const ExprSet&) const = 0;
+    virtual Value operator()(const ExprSetSubscript&) const = 0;
+    virtual Value operator()(const ExprSubscript&) const = 0;
     virtual Value operator()(const ExprSuper&) const = 0;
     virtual Value operator()(const ExprTernary&) const = 0;
     virtual Value operator()(const ExprThis&) const = 0;

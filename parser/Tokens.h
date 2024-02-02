@@ -14,7 +14,6 @@ struct Tokens
         RIGHT_BRACKET,
         COMMA,
         DOT,
-        NEWLINE,
         IDENTIFIER,
         STRING,
         NUMBER,

@@ -14,6 +14,10 @@ let b = base(5, 9)
 b.call()
 
 class derived < base
+  fn init(a, b)
+    super.init(a*2, b*2)
+  endfn
+
   fn call()
     print -this.x
     print -this.y

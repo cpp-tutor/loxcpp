@@ -1,0 +1,21 @@
+let a <- [ 5, 4, 3, 2, [1, 0] ]
+print a
+
+for 0 <= n < 5
+  print a[n]
+  if n = 4 then
+    for 0 <= m < 2
+        print a[n][m]
+    endfor
+  endif
+endfor
+
+let n <- 5
+while n
+  n <- n - 1
+  a[n] <- 0
+  print a
+endwhile
+
+a[10] <- nil
+print a

@@ -10,6 +10,15 @@ public:
     virtual ~Expr() {}
 };
 
+class ExprArray : public Expr {
+    std::vector<std::shared_ptr<Expr>> elements;
+public:
+    ExprArray(const std::vector<std::shared_ptr<Expr>> elements)
+        : elements{ elements } {}
+    const auto& get() const { return elements; }
+    virtual Value accept(const ExprVisitor&) const override;
+};
+
 class ExprAssign : public Expr {
     std::string name;
     std::shared_ptr<Expr> expr;
@@ -99,6 +108,27 @@ public:
     const auto getObject() const { return object; }
     const auto getValue() const { return value; }
     const auto& getName() const { return name; }
+    virtual Value accept(const ExprVisitor&) const override;
+};
+
+class ExprSubscript : public Expr {
+    std::shared_ptr<Expr> array, idx;
+public:
+    ExprSubscript(std::shared_ptr<Expr> array, std::shared_ptr<Expr> idx)
+        : array{ array }, idx{ idx } {}
+    const auto getArray() const { return array; }
+    const auto getIndex() const { return idx; }
+    virtual Value accept(const ExprVisitor&) const override;
+};
+
+class ExprSetSubscript : public Expr {
+    std::shared_ptr<Expr> array, idx, expr;
+public:
+    ExprSetSubscript(std::shared_ptr<Expr> array, std::shared_ptr<Expr> idx, std::shared_ptr<Expr> expr)
+        : array{ array }, idx{ idx }, expr{ expr } {}
+    const auto getArray() const { return array; }
+    const auto getIndex() const { return idx; }
+    const auto getExpr() const { return expr; }
     virtual Value accept(const ExprVisitor&) const override;
 };
 
