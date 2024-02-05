@@ -35,7 +35,6 @@ declaration : classDecl
         	| funDecl
         	| varDecl
             | statement
-			| error
 			;
 
 classDecl	: CLASS identifier optFunL ENDCLASS					{ $$ = $3; std::dynamic_pointer_cast<StmtClass>($$)->setName(get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($2)->get())); }
@@ -136,7 +135,8 @@ assignment	: identifier ASSIGN expression 				{ $$ = std::make_shared<ExprAssign
 			| primary DOT identifier ASSIGN expression	{ $$ = std::make_shared<ExprSet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get()), std::dynamic_pointer_cast<Expr>($5)); }
 			| call DOT identifier ASSIGN expression		{ $$ = std::make_shared<ExprSet>(std::dynamic_pointer_cast<Expr>($1), get<std::string>(std::dynamic_pointer_cast<ExprLiteral>($3)->get()), std::dynamic_pointer_cast<Expr>($5)); }
 			| primary LEFT_BRACKET expression RIGHT_BRACKET ASSIGN expression 	{ $$ = make_shared<ExprSetSubscript>(std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3), std::dynamic_pointer_cast<Expr>($6)); }
-			;
+			| call LEFT_BRACKET expression RIGHT_BRACKET ASSIGN expression 	{ $$ = make_shared<ExprSetSubscript>(std::dynamic_pointer_cast<Expr>($1), std::dynamic_pointer_cast<Expr>($3), std::dynamic_pointer_cast<Expr>($6)); }
+;
 
 unary		: NOT expression						{ $$ = std::make_shared<ExprUnary>(NOT, std::dynamic_pointer_cast<Expr>($2)); }
 			| MINUS expression %prec UMINUS			{ $$ = std::make_shared<ExprUnary>(MINUS, std::dynamic_pointer_cast<Expr>($2)); }

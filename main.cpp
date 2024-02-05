@@ -178,7 +178,7 @@ int main(const int argc, const char **argv) {
                     parser.parse();
                 }
                 catch (std::exception &e) {
-                    std::cerr << e.what() << " at line " << scanner.lineNr() << '\n';
+                    std::cerr << e.what() << " near line " << scanner.lineNr() << '\n';
                     returnCode = ReturnCode::RuntimeError;
                 }
                 continuation = false;
@@ -201,7 +201,7 @@ int main(const int argc, const char **argv) {
             }
         }
         catch (std::exception &e) {
-            std::cerr << e.what() << " at line " << scanner.lineNr() << '\n';
+            std::cerr << e.what() << " near line " << scanner.lineNr() << '\n';
             returnCode = ReturnCode::RuntimeError;
         }
     }

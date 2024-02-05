@@ -9,7 +9,7 @@
 inline void Parse::error()
 {
     if (report_syntax_error) {
-        std::cerr << "Syntax error at line " << scanner.lineNr() << '\n';
+        std::cerr << "Syntax error near line " << scanner.lineNr() << '\n';
     }
 }
 
